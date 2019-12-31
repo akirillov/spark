@@ -219,20 +219,26 @@ object PROCESS_TABLES extends QueryTest with SQLTestUtils {
       println(s">>>>>>>>> INFO: Fetched contents:\n${releases}")
       // scalastyle:on
 
-      val parsedReleases = releases
+      val filteredReleases = releases
         .split("\n")
         .filter(_.contains("""<li><a href="spark-"""))
-        .map("""<a href="spark-(\d.\d.\d)/">""".r.findFirstMatchIn(_).get.group(1))
 
       // scalastyle:off
-      println(s">>>>>>>>> INFO: Parsed releases: ${parsedReleases.mkString(", ")}")
+      println(s">>>>>>>>> INFO: Filtered releases: ${filteredReleases.mkString(", ")}")
       // scalastyle:on
+
+      val parsedReleases = filteredReleases
+        .map(v => (v, """<a href="spark-(\d.\d.\d)/">""".r.findFirstMatchIn(v).map(_.group(1))))
+
       // scalastyle:off
-      println(s">>>>>>>>> INFO: Filtered releases: ${parsedReleases.filter(_ < org.apache.spark.SPARK_VERSION).mkString(", ")}")
+      println(s">>>>>>>>> INFO: Parsed releases: ${filteredReleases.filter(_ < org.apache.spark.SPARK_VERSION).mkString(", ")}")
       println(s">>>>>>>>> INFO: SPARK_VERSION: ${org.apache.spark.SPARK_VERSION}")
       // scalastyle:on
 
-      parsedReleases.filter(_ < org.apache.spark.SPARK_VERSION)
+      filteredReleases
+        .map("""<a href="spark-(\d.\d.\d)/">""".r.findFirstMatchIn(_).map(_.group(1)))
+        .filter(_.exists(_ < org.apache.spark.SPARK_VERSION))
+        .map(_.get)
     } catch {
       // do not throw exception during object initialization.
       case NonFatal(ex) =>
