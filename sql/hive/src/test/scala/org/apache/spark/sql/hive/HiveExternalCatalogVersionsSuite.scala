@@ -211,14 +211,36 @@ object PROCESS_TABLES extends QueryTest with SQLTestUtils {
   val testingVersions: Seq[String] = {
     import scala.io.Source
     try {
-      Source.fromURL("https://dist.apache.org/repos/dist/release/spark/").mkString
+      // scalastyle:off
+      println(">>>>>>>>> INFO: Fetching https://dist.apache.org/repos/dist/release/spark/")
+      // scalastyle:on
+      val releases = Source.fromURL("https://dist.apache.org/repos/dist/release/spark/").mkString
+      // scalastyle:off
+      println(s">>>>>>>>> INFO: Fetched contents:\n${releases}")
+      // scalastyle:on
+
+      val parsedReleases = releases
         .split("\n")
         .filter(_.contains("""<li><a href="spark-"""))
         .map("""<a href="spark-(\d.\d.\d)/">""".r.findFirstMatchIn(_).get.group(1))
-        .filter(_ < org.apache.spark.SPARK_VERSION)
+
+      // scalastyle:off
+      println(s">>>>>>>>> INFO: Parsed releases: ${parsedReleases.mkString(", ")}")
+      // scalastyle:on
+      // scalastyle:off
+      println(s">>>>>>>>> INFO: Filtered releases: ${parsedReleases.filter(_ < org.apache.spark.SPARK_VERSION).mkString(", ")}")
+      println(s">>>>>>>>> INFO: SPARK_VERSION: ${org.apache.spark.SPARK_VERSION}")
+      // scalastyle:on
+
+      parsedReleases.filter(_ < org.apache.spark.SPARK_VERSION)
     } catch {
       // do not throw exception during object initialization.
-      case NonFatal(_) => Nil
+      case NonFatal(ex) =>
+        // scalastyle:off
+        println(">>>>>>>>> ERROR: Exception caught while fetching https://dist.apache.org/repos/dist/release/spark/")
+        ex.printStackTrace()
+        // scalastyle:on
+        Nil
     }
   }
 
